@@ -1,18 +1,15 @@
-'use server'
-
+import { NextRequest, NextResponse } from 'next/server'
 import { uploadToR2, generateAssetKey } from '@/lib/r2'
 import { createAssetRecord } from '@/lib/airtable'
-import { AssetMetadata } from '@/types'
 
-interface UploadResult {
-  success: boolean
-  error?: string
-  assets?: Array<{ id: string; filename: string; url: string }>
-}
+export const runtime = 'nodejs'
+export const maxDuration = 300 // 5 minutes
 
-export async function uploadAssets(formData: FormData): Promise<UploadResult> {
+export async function POST(request: NextRequest) {
   try {
-    console.log('=== UPLOAD START ===')
+    console.log('=== API UPLOAD START ===')
+
+    const formData = await request.formData()
     const files = formData.getAll('files') as File[]
     const metadataString = formData.get('metadata') as string
     const batchMode = formData.get('batchMode') === 'true'
@@ -23,15 +20,15 @@ export async function uploadAssets(formData: FormData): Promise<UploadResult> {
 
     if (!files || files.length === 0) {
       console.log('ERROR: No files provided')
-      return { success: false, error: 'No files provided' }
+      return NextResponse.json({ success: false, error: 'No files provided' }, { status: 400 })
     }
 
-    const metadata: AssetMetadata = JSON.parse(metadataString)
+    const metadata = JSON.parse(metadataString)
     console.log('Parsed metadata:', metadata)
 
     if (!metadata.event || !metadata.date) {
       console.log('ERROR: Missing required metadata fields')
-      return { success: false, error: 'Missing required metadata fields' }
+      return NextResponse.json({ success: false, error: 'Missing required metadata fields' }, { status: 400 })
     }
 
     const uploadResults = []
@@ -56,36 +53,27 @@ export async function uploadAssets(formData: FormData): Promise<UploadResult> {
         const publicUrl = await uploadToR2(key, buffer, file.type)
         console.log('R2 upload complete. Public URL:', publicUrl)
 
-        // Get file dimensions/metadata if it's an image or video
-        let width: number | undefined
-        let height: number | undefined
-        let duration: number | undefined
-
         const fileType: 'image' | 'video' = file.type.startsWith('image/') ? 'image' : 'video'
         console.log('Detected file type:', fileType)
-
-        // For images, we could extract dimensions here using a library like sharp
-        // For videos, we could extract metadata using ffprobe
-        // For now, we'll leave these undefined and handle on the client side if needed
 
         // Create asset record in Airtable
         console.log('Starting Airtable record creation...')
         const assetData = {
           filename: key,
           originalFilename: file.name,
-          url: publicUrl, // Use the public URL as the main URL
+          url: publicUrl,
           fileType,
           mimeType: file.type,
           size: file.size,
-          width,
-          height,
-          duration,
+          width: undefined,
+          height: undefined,
+          duration: undefined,
           uploadedAt: new Date().toISOString(),
           event: metadata.event,
           date: metadata.date,
-          photographer: metadata.photographer,
-          tags: metadata.tags,
-          description: metadata.description,
+          photographer: metadata.photographer || '',
+          tags: metadata.tags || [],
+          description: metadata.description || '',
         }
         console.log('Asset data to create:', assetData)
 
@@ -103,59 +91,34 @@ export async function uploadAssets(formData: FormData): Promise<UploadResult> {
         console.error('Error type:', typeof fileError)
         console.error('Error message:', fileError?.message || 'No message')
         console.error('Error stack:', fileError?.stack || 'No stack')
-        console.error('Error name:', fileError?.name || 'No name')
-        console.error('Error code:', fileError?.code || 'No code')
-        console.error('Error details:', fileError)
+        console.error('Full error:', fileError)
 
-        // Try to extract a meaningful error message
-        let errorMessage = 'Unknown error'
-        if (fileError?.message) {
-          errorMessage = fileError.message
-        } else if (fileError?.error) {
-          errorMessage = fileError.error
-        } else if (fileError?.statusText) {
-          errorMessage = fileError.statusText
-        } else if (typeof fileError === 'string') {
-          errorMessage = fileError
-        }
-
-        return {
+        const errorMessage = fileError?.message || 'Unknown error'
+        return NextResponse.json({
           success: false,
           error: `Failed to upload ${file.name}: ${errorMessage}`
-        }
+        }, { status: 500 })
       }
     }
 
     console.log('=== UPLOAD SUCCESS ===')
     console.log('Upload results:', uploadResults)
-    return {
+
+    return NextResponse.json({
       success: true,
       assets: uploadResults,
-    }
+    })
   } catch (error: any) {
-    console.error('=== TOP LEVEL UPLOAD ERROR ===')
+    console.error('=== TOP LEVEL API UPLOAD ERROR ===')
     console.error('Error type:', typeof error)
     console.error('Error message:', error?.message || 'No message')
     console.error('Error stack:', error?.stack || 'No stack')
-    console.error('Error name:', error?.name || 'No name')
-    console.error('Error code:', error?.code || 'No code')
     console.error('Raw error object:', error)
 
-    // Try to extract a meaningful error message
-    let errorMessage = 'Upload failed'
-    if (error?.message) {
-      errorMessage = error.message
-    } else if (error?.error) {
-      errorMessage = error.error
-    } else if (error?.statusText) {
-      errorMessage = error.statusText
-    } else if (typeof error === 'string') {
-      errorMessage = error
-    }
-
-    return {
+    const errorMessage = error?.message || 'Upload failed'
+    return NextResponse.json({
       success: false,
       error: errorMessage,
-    }
+    }, { status: 500 })
   }
 }

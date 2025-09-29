@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
 import { UploadDropzone } from '@/components/upload/dropzone'
 import { AssetMetadata, UploadProgress } from '@/types'
-import { uploadAssets } from '@/app/actions/upload'
+// import { uploadAssets } from '@/app/actions/upload' // Using API route instead
 
 const COMMON_TAGS = [
   'Headshot',
@@ -97,6 +97,7 @@ export default function UploadPage() {
     }
   }
 
+
   const handleUpload = async () => {
     if (files.length === 0) return
 
@@ -129,7 +130,23 @@ export default function UploadPage() {
         prev.map(p => ({ ...p, status: 'uploading', progress: 10 }))
       )
 
-      const result = await uploadAssets(formData)
+      // Add explicit timeout and better error handling
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 minutes timeout
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
 
       toast.dismiss(uploadToast)
 
@@ -146,6 +163,12 @@ export default function UploadPage() {
       }
     } catch (error: any) {
       toast.dismiss(uploadToast)
+      console.error('=== CLIENT UPLOAD ERROR ===')
+      console.error('Error type:', typeof error)
+      console.error('Error message:', error?.message)
+      console.error('Error stack:', error?.stack)
+      console.error('Full error:', error)
+
       const errorMessage = error.message?.includes('timeout')
         ? 'Upload timed out. Try uploading smaller files or check your connection.'
         : `Upload failed: ${error.message || 'Unknown error'}`
@@ -154,7 +177,6 @@ export default function UploadPage() {
       setUploadProgress(prev =>
         prev.map(p => ({ ...p, status: 'error', error: errorMessage }))
       )
-      console.error('Upload error:', error)
     } finally {
       setUploading(false)
     }
