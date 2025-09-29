@@ -25,7 +25,6 @@ const COMMON_TAGS = [
   'audience',
   'backstage',
   'award',
-  'group photo',
   'candid'
 ]
 
