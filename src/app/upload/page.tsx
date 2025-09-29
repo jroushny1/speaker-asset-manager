@@ -15,17 +15,18 @@ import { uploadAssets } from '@/app/actions/upload'
 
 const COMMON_TAGS = [
   'Headshot',
-  'keynote',
-  'presentation',
-  'networking',
-  'panel',
-  'workshop',
-  'conference',
-  'speaking',
-  'audience',
-  'backstage',
-  'award',
-  'candid'
+  'Keynote',
+  'Presentation',
+  'Networking',
+  'Panel',
+  'Workshop',
+  'Conference',
+  'Speaking',
+  'Audience',
+  'Backstage',
+  'Award',
+  'Group Photo',
+  'Candid'
 ]
 
 export default function UploadPage() {
