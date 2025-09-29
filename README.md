@@ -7,7 +7,7 @@ A professional digital asset management system for conference speakers to organi
 ## Features
 
 ### 📸 Smart Upload System
-- **Drag & Drop Interface**: Intuitive file upload supporting photos and videos up to 500MB
+- **Drag & Drop Interface**: Intuitive file upload supporting photos and videos up to 2GB
 - **Batch Upload Mode**: Apply the same metadata to multiple files at once
 - **Real-time Progress**: Visual upload progress indicators
 - **Auto File Processing**: Automatic upload to Cloudflare R2 with metadata storage

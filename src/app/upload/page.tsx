@@ -47,9 +47,15 @@ export default function UploadPage() {
     setFiles(selectedFiles)
 
     // Check file sizes and warn about large files
-    const largeFiles = selectedFiles.filter(file => file.size > 20 * 1024 * 1024)
-    if (largeFiles.length > 0) {
-      toast.info(`${largeFiles.length} large file(s) selected. Uploads may take 3-5 minutes each.`, {
+    const largeFiles = selectedFiles.filter(file => file.size > 100 * 1024 * 1024) // 100MB
+    const veryLargeFiles = selectedFiles.filter(file => file.size > 500 * 1024 * 1024) // 500MB
+
+    if (veryLargeFiles.length > 0) {
+      toast.info(`${veryLargeFiles.length} very large file(s) selected (500MB+). Uploads may take 10-20 minutes each.`, {
+        duration: 8000
+      })
+    } else if (largeFiles.length > 0) {
+      toast.info(`${largeFiles.length} large file(s) selected (100MB+). Uploads may take 3-8 minutes each.`, {
         duration: 6000
       })
     }
@@ -75,10 +81,17 @@ export default function UploadPage() {
   }
 
   const checkFileSize = (files: File[]) => {
-    const largeFiles = files.filter(file => file.size > 20 * 1024 * 1024) // 20MB
-    if (largeFiles.length > 0) {
+    const largeFiles = files.filter(file => file.size > 100 * 1024 * 1024) // 100MB
+    const veryLargeFiles = files.filter(file => file.size > 500 * 1024 * 1024) // 500MB
+
+    if (veryLargeFiles.length > 0) {
+      const fileInfo = veryLargeFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ')
+      toast.warning(`Very large files detected: ${fileInfo}. Upload may take 10-20 minutes per file.`, {
+        duration: 10000
+      })
+    } else if (largeFiles.length > 0) {
       const fileInfo = largeFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ')
-      toast.warning(`Large files detected: ${fileInfo}. Upload may take 3-5 minutes per file.`, {
+      toast.info(`Large files detected: ${fileInfo}. Upload may take 3-8 minutes per file.`, {
         duration: 8000
       })
     }
