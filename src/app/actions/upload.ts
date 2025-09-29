@@ -98,15 +98,30 @@ export async function uploadAssets(formData: FormData): Promise<UploadResult> {
           url: publicUrl,
         })
         console.log(`--- File ${file.name} processed successfully ---`)
-      } catch (fileError) {
+      } catch (fileError: any) {
         console.error(`=== ERROR uploading file ${file.name} ===`)
         console.error('Error type:', typeof fileError)
-        console.error('Error message:', fileError instanceof Error ? fileError.message : 'Not an Error object')
-        console.error('Error stack:', fileError instanceof Error ? fileError.stack : 'No stack')
-        console.error('Raw error object:', fileError)
+        console.error('Error message:', fileError?.message || 'No message')
+        console.error('Error stack:', fileError?.stack || 'No stack')
+        console.error('Error name:', fileError?.name || 'No name')
+        console.error('Error code:', fileError?.code || 'No code')
+        console.error('Error details:', fileError)
+
+        // Try to extract a meaningful error message
+        let errorMessage = 'Unknown error'
+        if (fileError?.message) {
+          errorMessage = fileError.message
+        } else if (fileError?.error) {
+          errorMessage = fileError.error
+        } else if (fileError?.statusText) {
+          errorMessage = fileError.statusText
+        } else if (typeof fileError === 'string') {
+          errorMessage = fileError
+        }
+
         return {
           success: false,
-          error: `Failed to upload ${file.name}: ${fileError instanceof Error ? fileError.message : 'Unknown error'}`
+          error: `Failed to upload ${file.name}: ${errorMessage}`
         }
       }
     }
@@ -117,15 +132,30 @@ export async function uploadAssets(formData: FormData): Promise<UploadResult> {
       success: true,
       assets: uploadResults,
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('=== TOP LEVEL UPLOAD ERROR ===')
     console.error('Error type:', typeof error)
-    console.error('Error message:', error instanceof Error ? error.message : 'Not an Error object')
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack')
+    console.error('Error message:', error?.message || 'No message')
+    console.error('Error stack:', error?.stack || 'No stack')
+    console.error('Error name:', error?.name || 'No name')
+    console.error('Error code:', error?.code || 'No code')
     console.error('Raw error object:', error)
+
+    // Try to extract a meaningful error message
+    let errorMessage = 'Upload failed'
+    if (error?.message) {
+      errorMessage = error.message
+    } else if (error?.error) {
+      errorMessage = error.error
+    } else if (error?.statusText) {
+      errorMessage = error.statusText
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    }
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: errorMessage,
     }
   }
 }
