@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,6 +43,18 @@ export default function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState<UploadProgress[]>([])
   const [batchMode, setBatchMode] = useState(false)
 
+  const handleFilesSelected = (selectedFiles: File[]) => {
+    setFiles(selectedFiles)
+
+    // Check file sizes and warn about large files
+    const largeFiles = selectedFiles.filter(file => file.size > 20 * 1024 * 1024)
+    if (largeFiles.length > 0) {
+      toast.info(`${largeFiles.length} large file(s) selected. Uploads may take 3-5 minutes each.`, {
+        duration: 6000
+      })
+    }
+  }
+
   const handleMetadataChange = (field: keyof AssetMetadata, value: string | string[]) => {
     setMetadata((prev) => ({ ...prev, [field]: value }))
   }
@@ -53,8 +66,29 @@ export default function UploadPage() {
     handleMetadataChange('tags', newTags)
   }
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  const checkFileSize = (files: File[]) => {
+    const largeFiles = files.filter(file => file.size > 20 * 1024 * 1024) // 20MB
+    if (largeFiles.length > 0) {
+      const fileInfo = largeFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ')
+      toast.warning(`Large files detected: ${fileInfo}. Upload may take 3-5 minutes per file.`, {
+        duration: 8000
+      })
+    }
+  }
+
   const handleUpload = async () => {
     if (files.length === 0) return
+
+    // Check for large files and warn user
+    checkFileSize(files)
 
     setUploading(true)
     setUploadProgress(
@@ -65,20 +99,48 @@ export default function UploadPage() {
       }))
     )
 
+    // Show upload starting toast with timeout warning
+    const uploadToast = toast.loading(
+      `Uploading ${files.length} file(s)... This may take several minutes for large files.`,
+      { duration: Infinity }
+    )
+
     try {
       const formData = new FormData()
       files.forEach((file) => formData.append('files', file))
       formData.append('metadata', JSON.stringify(metadata))
       formData.append('batchMode', batchMode.toString())
 
+      // Set progress to uploading for all files
+      setUploadProgress(prev =>
+        prev.map(p => ({ ...p, status: 'uploading', progress: 10 }))
+      )
+
       const result = await uploadAssets(formData)
 
+      toast.dismiss(uploadToast)
+
       if (result.success) {
+        toast.success(`Successfully uploaded ${files.length} file(s)!`, {
+          icon: '🎉'
+        })
         router.push('/gallery')
       } else {
-        console.error('Upload failed:', result.error)
+        toast.error(`Upload failed: ${result.error}`)
+        setUploadProgress(prev =>
+          prev.map(p => ({ ...p, status: 'error', error: result.error }))
+        )
       }
-    } catch (error) {
+    } catch (error: any) {
+      toast.dismiss(uploadToast)
+      const errorMessage = error.message?.includes('timeout')
+        ? 'Upload timed out. Try uploading smaller files or check your connection.'
+        : `Upload failed: ${error.message || 'Unknown error'}`
+
+      toast.error(errorMessage, { duration: 10000 })
+      setUploadProgress(prev =>
+        prev.map(p => ({ ...p, status: 'error', error: errorMessage }))
+      )
       console.error('Upload error:', error)
     } finally {
       setUploading(false)
@@ -103,7 +165,7 @@ export default function UploadPage() {
               <CardTitle>Select Files</CardTitle>
             </CardHeader>
             <CardContent>
-              <UploadDropzone onFilesSelected={setFiles} />
+              <UploadDropzone onFilesSelected={handleFilesSelected} />
             </CardContent>
           </Card>
         </div>

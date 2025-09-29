@@ -4,7 +4,22 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '500mb', // Allow up to 500MB uploads to match UI limit
+      allowedOrigins: undefined, // Allow all origins for server actions
     },
+  },
+  // Increase timeout for uploads
+  async headers() {
+    return [
+      {
+        source: '/api/upload/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store',
+          },
+        ],
+      },
+    ]
   },
   images: {
     remotePatterns: [
