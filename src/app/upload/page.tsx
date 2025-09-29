@@ -98,6 +98,116 @@ export default function UploadPage() {
   }
 
 
+  const uploadFileDirectly = async (file: File, index: number) => {
+    try {
+      // Update progress to show getting presigned URL
+      setUploadProgress(prev =>
+        prev.map((p, i) => i === index ? { ...p, status: 'uploading', progress: 5 } : p)
+      )
+
+      // Get presigned URL
+      const presignedResponse = await fetch('/api/upload/presigned-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size
+        })
+      })
+
+      if (!presignedResponse.ok) {
+        throw new Error(`Failed to get presigned URL: ${presignedResponse.status}`)
+      }
+
+      const { presignedUrl, key, publicUrl } = await presignedResponse.json()
+
+      // Update progress to show uploading to R2
+      setUploadProgress(prev =>
+        prev.map((p, i) => i === index ? { ...p, progress: 20 } : p)
+      )
+
+      // Upload directly to R2 with progress tracking
+      const xhr = new XMLHttpRequest()
+
+      return new Promise((resolve, reject) => {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const progress = Math.round((e.loaded / e.total) * 70) + 20 // 20-90%
+            setUploadProgress(prev =>
+              prev.map((p, i) => i === index ? { ...p, progress } : p)
+            )
+          }
+        })
+
+        xhr.addEventListener('load', async () => {
+          if (xhr.status === 200) {
+            try {
+              // Update progress to show saving metadata
+              setUploadProgress(prev =>
+                prev.map((p, i) => i === index ? { ...p, progress: 95 } : p)
+              )
+
+              // Save metadata to Airtable
+              const metadataResponse = await fetch('/api/upload/metadata', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  key,
+                  originalFilename: file.name,
+                  publicUrl,
+                  fileType: file.type.startsWith('image/') ? 'image' : 'video',
+                  mimeType: file.type,
+                  size: file.size,
+                  metadata
+                })
+              })
+
+              if (!metadataResponse.ok) {
+                throw new Error(`Failed to save metadata: ${metadataResponse.status}`)
+              }
+
+              const result = await metadataResponse.json()
+
+              // Update progress to complete
+              setUploadProgress(prev =>
+                prev.map((p, i) => i === index ? { ...p, status: 'completed', progress: 100 } : p)
+              )
+
+              resolve(result.asset)
+            } catch (metadataError) {
+              setUploadProgress(prev =>
+                prev.map((p, i) => i === index ? { ...p, status: 'error', error: 'Failed to save metadata' } : p)
+              )
+              reject(metadataError)
+            }
+          } else {
+            setUploadProgress(prev =>
+              prev.map((p, i) => i === index ? { ...p, status: 'error', error: `Upload failed: ${xhr.status}` } : p)
+            )
+            reject(new Error(`Upload failed with status: ${xhr.status}`))
+          }
+        })
+
+        xhr.addEventListener('error', () => {
+          setUploadProgress(prev =>
+            prev.map((p, i) => i === index ? { ...p, status: 'error', error: 'Network error' } : p)
+          )
+          reject(new Error('Network error during upload'))
+        })
+
+        xhr.open('PUT', presignedUrl)
+        xhr.setRequestHeader('Content-Type', file.type)
+        xhr.send(file)
+      })
+    } catch (error: any) {
+      setUploadProgress(prev =>
+        prev.map((p, i) => i === index ? { ...p, status: 'error', error: error.message } : p)
+      )
+      throw error
+    }
+  }
+
   const handleUpload = async () => {
     if (files.length === 0) return
 
@@ -120,47 +230,68 @@ export default function UploadPage() {
     )
 
     try {
-      const formData = new FormData()
-      files.forEach((file) => formData.append('files', file))
-      formData.append('metadata', JSON.stringify(metadata))
-      formData.append('batchMode', batchMode.toString())
+      const FILE_SIZE_LIMIT = 4 * 1024 * 1024 // 4MB to stay under Vercel's 4.5MB limit
+      const smallFiles = files.filter(file => file.size <= FILE_SIZE_LIMIT)
+      const largeFiles = files.filter(file => file.size > FILE_SIZE_LIMIT)
 
-      // Set progress to uploading for all files
-      setUploadProgress(prev =>
-        prev.map(p => ({ ...p, status: 'uploading', progress: 10 }))
-      )
+      console.log(`Small files (${smallFiles.length}):`, smallFiles.map(f => f.name))
+      console.log(`Large files (${largeFiles.length}):`, largeFiles.map(f => f.name))
 
-      // Add explicit timeout and better error handling
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 minutes timeout
+      const uploadResults = []
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-      })
+      // Upload small files through the API (batched)
+      if (smallFiles.length > 0) {
+        const formData = new FormData()
+        smallFiles.forEach((file) => formData.append('files', file))
+        formData.append('metadata', JSON.stringify(metadata))
+        formData.append('batchMode', batchMode.toString())
 
-      clearTimeout(timeoutId)
+        const smallFileIndexes = files.map((file, index) =>
+          file.size <= FILE_SIZE_LIMIT ? index : -1
+        ).filter(i => i !== -1)
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        // Set progress for small files
+        setUploadProgress(prev =>
+          prev.map((p, i) => smallFileIndexes.includes(i) ? { ...p, status: 'uploading', progress: 10 } : p)
+        )
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const result = await response.json()
+
+        if (result.success) {
+          uploadResults.push(...result.assets)
+          // Mark small files as completed
+          setUploadProgress(prev =>
+            prev.map((p, i) => smallFileIndexes.includes(i) ? { ...p, status: 'completed', progress: 100 } : p)
+          )
+        } else {
+          throw new Error(result.error)
+        }
       }
 
-      const result = await response.json()
+      // Upload large files directly to R2
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        if (file.size > FILE_SIZE_LIMIT) {
+          const asset = await uploadFileDirectly(file, i)
+          uploadResults.push(asset)
+        }
+      }
 
       toast.dismiss(uploadToast)
+      toast.success(`Successfully uploaded ${files.length} file(s)!`, {
+        icon: '🎉'
+      })
+      router.push('/gallery')
 
-      if (result.success) {
-        toast.success(`Successfully uploaded ${files.length} file(s)!`, {
-          icon: '🎉'
-        })
-        router.push('/gallery')
-      } else {
-        toast.error(`Upload failed: ${result.error}`)
-        setUploadProgress(prev =>
-          prev.map(p => ({ ...p, status: 'error', error: result.error }))
-        )
-      }
     } catch (error: any) {
       toast.dismiss(uploadToast)
       console.error('=== CLIENT UPLOAD ERROR ===')
@@ -175,7 +306,7 @@ export default function UploadPage() {
 
       toast.error(errorMessage, { duration: 10000 })
       setUploadProgress(prev =>
-        prev.map(p => ({ ...p, status: 'error', error: errorMessage }))
+        prev.map(p => p.status !== 'completed' ? { ...p, status: 'error', error: errorMessage } : p)
       )
     } finally {
       setUploading(false)

@@ -26,6 +26,16 @@ export async function uploadToR2(
   return `${process.env.CLOUDFLARE_PUBLIC_URL}/${key}`
 }
 
+export async function getPresignedUrl(key: string, contentType: string): Promise<string> {
+  const command = new PutObjectCommand({
+    Bucket: process.env.CLOUDFLARE_BUCKET_NAME!,
+    Key: key,
+    ContentType: contentType,
+  })
+
+  return await getSignedUrl(r2Client, command, { expiresIn: 3600 })
+}
+
 export async function getSignedDownloadUrl(key: string): Promise<string> {
   const command = new GetObjectCommand({
     Bucket: process.env.CLOUDFLARE_BUCKET_NAME!,
