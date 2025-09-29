@@ -53,17 +53,8 @@ export function AssetDetailModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span className="truncate pr-4">{asset.originalFilename}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDownload(asset)}
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Download
-            </Button>
+          <DialogTitle className="truncate pr-4">
+            {asset.event} - {asset.photographer}
           </DialogTitle>
         </DialogHeader>
 
@@ -225,7 +216,7 @@ export function AssetDetailModal({
                     onClick={() => window.open(asset.publicUrl, '_blank')}
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    View Full Size
+                    Open Full Size
                   </Button>
                 )}
               </div>

@@ -41,30 +41,32 @@ export default function SetupPage() {
     setConnections(prev => prev.map(conn => ({ ...conn, status: 'checking', error: undefined, details: undefined })))
 
     try {
-      // Check environment variables
-      const envVars = [
-        'CLOUDFLARE_ACCOUNT_ID',
-        'CLOUDFLARE_ACCESS_KEY_ID',
-        'CLOUDFLARE_SECRET_ACCESS_KEY',
-        'CLOUDFLARE_BUCKET_NAME',
-        'CLOUDFLARE_PUBLIC_URL',
-        'AIRTABLE_ACCESS_TOKEN',
-        'AIRTABLE_BASE_ID',
-        'AIRTABLE_TABLE_NAME'
-      ]
+      // Check environment variables via API
+      try {
+        const envResponse = await fetch('/api/test/env')
+        const envResult = await envResponse.json()
 
-      const missingVars = envVars.filter(varName => !process.env[varName])
-
-      setConnections(prev => prev.map(conn =>
-        conn.name === 'Environment Variables'
-          ? {
-              ...conn,
-              status: missingVars.length === 0 ? 'success' : 'error',
-              error: missingVars.length > 0 ? `Missing variables: ${missingVars.join(', ')}` : undefined,
-              details: missingVars.length === 0 ? 'All required environment variables are set' : undefined
-            }
-          : conn
-      ))
+        setConnections(prev => prev.map(conn =>
+          conn.name === 'Environment Variables'
+            ? {
+                ...conn,
+                status: envResult.success ? 'success' : 'error',
+                error: envResult.success ? undefined : envResult.message,
+                details: envResult.success ? 'All required environment variables are properly configured' : undefined
+              }
+            : conn
+        ))
+      } catch (error) {
+        setConnections(prev => prev.map(conn =>
+          conn.name === 'Environment Variables'
+            ? {
+                ...conn,
+                status: 'error',
+                error: 'Failed to check environment variables'
+              }
+            : conn
+        ))
+      }
 
       // Test Cloudflare R2 connection
       try {

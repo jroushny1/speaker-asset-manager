@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import { Asset } from '@/types'
 import { AssetGrid } from '@/components/gallery/asset-grid'
 import { SearchFilters, FilterState } from '@/components/gallery/search-filters'
@@ -38,6 +39,7 @@ export default function GalleryPage() {
       setAssets(result.records)
     } catch (error) {
       console.error('Error loading assets:', error)
+      toast.error('Failed to load assets. Please check your connection.')
     } finally {
       setLoading(false)
     }
@@ -94,6 +96,8 @@ export default function GalleryPage() {
 
   const handleDownload = async (asset: Asset) => {
     try {
+      toast.loading('Preparing download...', { id: 'download' })
+
       const response = await fetch('/api/download', {
         method: 'POST',
         headers: {
@@ -113,18 +117,23 @@ export default function GalleryPage() {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+
+      toast.success('Download started!', { id: 'download', icon: '⬇️' })
     } catch (error) {
       console.error('Error downloading asset:', error)
+      toast.error('Failed to download file', { id: 'download' })
     }
   }
 
   const handleShare = async (asset: Asset) => {
     try {
       await navigator.clipboard.writeText(asset.publicUrl)
-      // You could add a toast notification here to show it was copied
-      console.log('Share link copied to clipboard')
+      toast.success('Share link copied to clipboard!', {
+        icon: '🔗',
+      })
     } catch (error) {
       console.error('Error copying to clipboard:', error)
+      toast.error('Failed to copy link to clipboard')
       // Fallback: show the URL in an alert or modal
       alert(`Share this link: ${asset.publicUrl}`)
     }

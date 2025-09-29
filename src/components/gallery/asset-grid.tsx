@@ -135,17 +135,17 @@ export function AssetGrid({ assets, onAssetClick, onDownload, onShare }: AssetGr
 
           {/* Asset info */}
           <div className="p-3">
-            <h3 className="font-medium text-sm truncate mb-1" title={asset.originalFilename}>
-              {asset.originalFilename}
+            <h3 className="font-medium text-sm truncate mb-1" title={`${asset.event} - ${asset.photographer}`}>
+              {asset.event}
             </h3>
             <div className="space-y-1 text-xs text-gray-500">
               <div className="flex items-center justify-between">
-                <span className="truncate">{asset.event}</span>
+                <span className="truncate">{asset.photographer}</span>
                 <span>{formatFileSize(asset.size)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span>{asset.photographer}</span>
                 <span>{formatDate(asset.date)}</span>
+                <span className="capitalize">{asset.fileType}</span>
               </div>
               {asset.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
