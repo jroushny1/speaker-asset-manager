@@ -2,7 +2,17 @@
 
 A professional digital asset management system for conference speakers to organize, store, and share photos and videos from their speaking events. Built with Next.js 14, Cloudflare R2, and Airtable.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fspeaker-asset-manager&env=CLOUDFLARE_ACCOUNT_ID,CLOUDFLARE_ACCESS_KEY_ID,CLOUDFLARE_SECRET_ACCESS_KEY,CLOUDFLARE_BUCKET_NAME,CLOUDFLARE_PUBLIC_URL,AIRTABLE_ACCESS_TOKEN,AIRTABLE_BASE_ID,AIRTABLE_TABLE_NAME&project-name=speaker-asset-manager&repository-name=speaker-asset-manager)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjroushny1%2Fspeaker-asset-manager&env=CLOUDFLARE_ACCOUNT_ID,CLOUDFLARE_ACCESS_KEY_ID,CLOUDFLARE_SECRET_ACCESS_KEY,CLOUDFLARE_BUCKET_NAME,CLOUDFLARE_PUBLIC_URL,AIRTABLE_ACCESS_TOKEN,AIRTABLE_BASE_ID,AIRTABLE_TABLE_NAME&project-name=speaker-asset-manager&repository-name=speaker-asset-manager)
+
+## 🚀 Quick Setup for Colleagues
+
+Want to share this with a colleague? They can get their own independent version in 10 minutes:
+
+1. **[Click here for step-by-step setup guide →](SETUP_GUIDE.md)**
+2. **One-click deploy**: Use the "Deploy with Vercel" button above
+3. **They need**: Their own Cloudflare R2 bucket and Airtable base (both free)
+
+Their version will be completely separate from yours - no shared data!
 
 ## Features
 
