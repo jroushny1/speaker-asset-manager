@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: '2gb', // Allow up to 2GB uploads for video files
+      bodySizeLimit: '5gb', // Allow up to 5GB uploads for video files
       allowedOrigins: undefined, // Allow all origins for server actions
     },
   },

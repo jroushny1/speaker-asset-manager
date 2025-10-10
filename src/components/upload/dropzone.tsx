@@ -20,7 +20,7 @@ interface UploadDropzoneProps {
   className?: string
 }
 
-const DEFAULT_MAX_SIZE = 2 * 1024 * 1024 * 1024 // 2GB
+const DEFAULT_MAX_SIZE = 5 * 1024 * 1024 * 1024 // 5GB
 const DEFAULT_ACCEPTED_TYPES = {
   'image/*': ['.jpeg', '.jpg', '.png', '.webp', '.gif'],
   'video/*': ['.mp4', '.mov', '.avi', '.wmv', '.flv', '.webm'],
