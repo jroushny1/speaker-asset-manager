@@ -70,14 +70,20 @@ export function AssetDetailModal({
                   className="object-contain"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
+              ) : asset.fileType === 'video' ? (
+                <video
+                  src={asset.publicUrl}
+                  controls
+                  className="w-full h-full object-contain"
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
               ) : (
                 <div className="w-full h-full bg-black flex items-center justify-center">
                   <div className="text-center">
                     <Play className="h-16 w-16 text-white opacity-70 mx-auto mb-4" />
-                    <p className="text-white">Video Preview</p>
-                    <p className="text-gray-300 text-sm mt-2">
-                      Click download to view full video
-                    </p>
+                    <p className="text-white">Preview not available</p>
                   </div>
                 </div>
               )}
@@ -208,17 +214,15 @@ export function AssetDetailModal({
                   Copy Share Link
                 </Button>
 
-                {asset.fileType === 'image' && (
-                  <Button
-                    variant="outline"
-                    className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
-                    size="lg"
-                    onClick={() => window.open(asset.publicUrl, '_blank')}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Open Full Size
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                  size="lg"
+                  onClick={() => window.open(asset.publicUrl, '_blank')}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  {asset.fileType === 'video' ? 'Open Video in New Tab' : 'Open Full Size'}
+                </Button>
               </div>
             </div>
           </div>

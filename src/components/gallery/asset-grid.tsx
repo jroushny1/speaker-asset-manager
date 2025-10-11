@@ -70,9 +70,16 @@ export function AssetGrid({ assets, onAssetClick, onDownload, onShare }: AssetGr
                 sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                 onError={() => handleImageError(asset.id)}
               />
-            ) : asset.fileType === 'video' ? (
-              <div className="w-full h-full bg-black flex items-center justify-center">
-                <Play className="h-12 w-12 text-white opacity-70" />
+            ) : asset.fileType === 'video' && asset.publicUrl ? (
+              <div className="relative w-full h-full">
+                <video
+                  src={asset.publicUrl}
+                  className="w-full h-full object-cover"
+                  preload="metadata"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center pointer-events-none">
+                  <Play className="h-12 w-12 text-white opacity-90" />
+                </div>
               </div>
             ) : (
               <div className="w-full h-full bg-gray-200 flex items-center justify-center">
