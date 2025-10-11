@@ -154,14 +154,45 @@ export default function UploadPage() {
 
               // Determine file type from MIME type or extension
               const getFileType = (file: File): 'image' | 'video' => {
-                if (file.type.startsWith('image/')) return 'image'
-                if (file.type.startsWith('video/')) return 'video'
+                console.log('File:', file.name, 'MIME type:', file.type)
+
+                if (file.type.startsWith('image/')) {
+                  console.log('Detected as image from MIME type')
+                  return 'image'
+                }
+                if (file.type.startsWith('video/')) {
+                  console.log('Detected as video from MIME type')
+                  return 'video'
+                }
 
                 // Fallback to extension check
                 const ext = file.name.split('.').pop()?.toLowerCase()
-                const videoExtensions = ['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm', 'mkv']
-                return videoExtensions.includes(ext || '') ? 'video' : 'image'
+                const videoExtensions = ['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm', 'mkv', 'm4v']
+                const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']
+
+                console.log('File extension:', ext)
+
+                if (videoExtensions.includes(ext || '')) {
+                  console.log('Detected as video from extension')
+                  return 'video'
+                }
+                if (imageExtensions.includes(ext || '')) {
+                  console.log('Detected as image from extension')
+                  return 'image'
+                }
+
+                console.log('Defaulting to image')
+                return 'image'
               }
+
+              const detectedFileType = getFileType(file)
+              const actualMimeType = file.type || 'application/octet-stream'
+
+              console.log('Sending to API:', {
+                fileType: detectedFileType,
+                mimeType: actualMimeType,
+                filename: file.name
+              })
 
               // Save metadata to Airtable
               const metadataResponse = await fetch('/api/upload/metadata', {
@@ -171,8 +202,8 @@ export default function UploadPage() {
                   key,
                   originalFilename: file.name,
                   publicUrl,
-                  fileType: getFileType(file),
-                  mimeType: file.type,
+                  fileType: detectedFileType,
+                  mimeType: actualMimeType,
                   size: file.size,
                   metadata
                 })
