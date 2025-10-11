@@ -152,6 +152,17 @@ export default function UploadPage() {
                 prev.map((p, i) => i === index ? { ...p, progress: 95 } : p)
               )
 
+              // Determine file type from MIME type or extension
+              const getFileType = (file: File): 'image' | 'video' => {
+                if (file.type.startsWith('image/')) return 'image'
+                if (file.type.startsWith('video/')) return 'video'
+
+                // Fallback to extension check
+                const ext = file.name.split('.').pop()?.toLowerCase()
+                const videoExtensions = ['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm', 'mkv']
+                return videoExtensions.includes(ext || '') ? 'video' : 'image'
+              }
+
               // Save metadata to Airtable
               const metadataResponse = await fetch('/api/upload/metadata', {
                 method: 'POST',
@@ -160,7 +171,7 @@ export default function UploadPage() {
                   key,
                   originalFilename: file.name,
                   publicUrl,
-                  fileType: file.type.startsWith('image/') ? 'image' : 'video',
+                  fileType: getFileType(file),
                   mimeType: file.type,
                   size: file.size,
                   metadata
