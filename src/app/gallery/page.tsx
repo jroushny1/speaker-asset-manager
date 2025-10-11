@@ -87,6 +87,13 @@ export default function GalleryPage() {
       filtered = filtered.filter(asset => asset.date <= filters.dateTo!)
     }
 
+    // Sort by event date in reverse chronological order (newest first)
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.date).getTime()
+      const dateB = new Date(b.date).getTime()
+      return dateB - dateA // Descending order
+    })
+
     setFilteredAssets(filtered)
   }
 
