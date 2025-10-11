@@ -255,60 +255,13 @@ export default function UploadPage() {
     )
 
     try {
-      const FILE_SIZE_LIMIT = 4 * 1024 * 1024 // 4MB to stay under Vercel's 4.5MB limit
-      const smallFiles = files.filter(file => file.size <= FILE_SIZE_LIMIT)
-      const largeFiles = files.filter(file => file.size > FILE_SIZE_LIMIT)
-
-      console.log(`Small files (${smallFiles.length}):`, smallFiles.map(f => f.name))
-      console.log(`Large files (${largeFiles.length}):`, largeFiles.map(f => f.name))
-
+      // Upload all files directly to R2 using presigned URLs
       const uploadResults = []
 
-      // Upload small files through the API (batched)
-      if (smallFiles.length > 0) {
-        const formData = new FormData()
-        smallFiles.forEach((file) => formData.append('files', file))
-        formData.append('metadata', JSON.stringify(metadata))
-        formData.append('batchMode', batchMode.toString())
-
-        const smallFileIndexes = files.map((file, index) =>
-          file.size <= FILE_SIZE_LIMIT ? index : -1
-        ).filter(i => i !== -1)
-
-        // Set progress for small files
-        setUploadProgress(prev =>
-          prev.map((p, i) => smallFileIndexes.includes(i) ? { ...p, status: 'uploading', progress: 10 } : p)
-        )
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const result = await response.json()
-
-        if (result.success) {
-          uploadResults.push(...result.assets)
-          // Mark small files as completed
-          setUploadProgress(prev =>
-            prev.map((p, i) => smallFileIndexes.includes(i) ? { ...p, status: 'completed', progress: 100 } : p)
-          )
-        } else {
-          throw new Error(result.error)
-        }
-      }
-
-      // Upload large files directly to R2
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        if (file.size > FILE_SIZE_LIMIT) {
-          const asset = await uploadFileDirectly(file, i)
-          uploadResults.push(asset)
-        }
+        const asset = await uploadFileDirectly(file, i)
+        uploadResults.push(asset)
       }
 
       toast.dismiss(uploadToast)
