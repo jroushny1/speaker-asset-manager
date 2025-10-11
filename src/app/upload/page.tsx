@@ -106,6 +106,7 @@ export default function UploadPage() {
       )
 
       // Get presigned URL
+      console.log(`Getting presigned URL for ${file.name} (${file.size} bytes)`)
       const presignedResponse = await fetch('/api/upload/presigned-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -117,10 +118,13 @@ export default function UploadPage() {
       })
 
       if (!presignedResponse.ok) {
-        throw new Error(`Failed to get presigned URL: ${presignedResponse.status}`)
+        const errorText = await presignedResponse.text()
+        console.error('Presigned URL error:', errorText)
+        throw new Error(`Failed to get presigned URL: ${presignedResponse.status} - ${errorText}`)
       }
 
       const { presignedUrl, key, publicUrl } = await presignedResponse.json()
+      console.log('Got presigned URL, starting upload to R2...')
 
       // Update progress to show uploading to R2
       setUploadProgress(prev =>
@@ -189,15 +193,36 @@ export default function UploadPage() {
           }
         })
 
-        xhr.addEventListener('error', () => {
+        xhr.addEventListener('error', (e) => {
+          console.error('XHR error event:', e)
+          console.error('XHR status:', xhr.status)
+          console.error('XHR response:', xhr.response)
           setUploadProgress(prev =>
-            prev.map((p, i) => i === index ? { ...p, status: 'error', error: 'Network error' } : p)
+            prev.map((p, i) => i === index ? { ...p, status: 'error', error: `Network error: ${xhr.status} ${xhr.statusText}` } : p)
           )
-          reject(new Error('Network error during upload'))
+          reject(new Error(`Network error during upload: ${xhr.status} ${xhr.statusText}`))
         })
 
+        xhr.addEventListener('abort', () => {
+          console.error('XHR aborted')
+          setUploadProgress(prev =>
+            prev.map((p, i) => i === index ? { ...p, status: 'error', error: 'Upload aborted' } : p)
+          )
+          reject(new Error('Upload aborted'))
+        })
+
+        xhr.addEventListener('timeout', () => {
+          console.error('XHR timeout')
+          setUploadProgress(prev =>
+            prev.map((p, i) => i === index ? { ...p, status: 'error', error: 'Upload timeout' } : p)
+          )
+          reject(new Error('Upload timeout'))
+        })
+
+        console.log('Opening XHR connection to presigned URL')
         xhr.open('PUT', presignedUrl)
         xhr.setRequestHeader('Content-Type', file.type)
+        console.log('Sending file via XHR:', file.name, file.size, file.type)
         xhr.send(file)
       })
     } catch (error: any) {

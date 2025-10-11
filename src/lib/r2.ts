@@ -33,7 +33,8 @@ export async function getPresignedUrl(key: string, contentType: string): Promise
     ContentType: contentType,
   })
 
-  return await getSignedUrl(r2Client, command, { expiresIn: 3600 })
+  // Extended expiration for large file uploads (2 hours)
+  return await getSignedUrl(r2Client, command, { expiresIn: 7200 })
 }
 
 export async function getSignedDownloadUrl(key: string): Promise<string> {
