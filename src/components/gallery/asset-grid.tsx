@@ -22,6 +22,13 @@ export function AssetGrid({ assets, onAssetClick, onDownload, onShare }: AssetGr
     setImageErrors(prev => new Set(prev).add(assetId))
   }
 
+  // Detect if file is actually a video based on URL extension
+  const isVideoFile = (asset: Asset): boolean => {
+    if (asset.fileType === 'video') return true
+    const videoExtensions = ['.mp4', '.mov', '.avi', '.wmv', '.flv', '.webm', '.mkv', '.m4v']
+    return videoExtensions.some(ext => asset.publicUrl?.toLowerCase().endsWith(ext))
+  }
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -58,19 +65,7 @@ export function AssetGrid({ assets, onAssetClick, onDownload, onShare }: AssetGr
           onClick={() => onAssetClick?.(asset)}
         >
           <div className="relative aspect-square bg-gray-100">
-            {asset.fileType === 'image' &&
-             asset.publicUrl &&
-             asset.publicUrl.trim() !== '' &&
-             !imageErrors.has(asset.id) ? (
-              <Image
-                src={asset.publicUrl}
-                alt={asset.originalFilename || 'Uploaded image'}
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-                onError={() => handleImageError(asset.id)}
-              />
-            ) : asset.fileType === 'video' && asset.publicUrl ? (
+            {isVideoFile(asset) && asset.publicUrl ? (
               <div className="relative w-full h-full">
                 <video
                   src={`${asset.publicUrl}#t=0.1`}
@@ -88,6 +83,18 @@ export function AssetGrid({ assets, onAssetClick, onDownload, onShare }: AssetGr
                   <Play className="h-12 w-12 text-white opacity-90" />
                 </div>
               </div>
+            ) : !isVideoFile(asset) &&
+              asset.publicUrl &&
+              asset.publicUrl.trim() !== '' &&
+              !imageErrors.has(asset.id) ? (
+              <Image
+                src={asset.publicUrl}
+                alt={asset.originalFilename || 'Uploaded image'}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                onError={() => handleImageError(asset.id)}
+              />
             ) : (
               <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                 <div className="text-center">
@@ -138,7 +145,7 @@ export function AssetGrid({ assets, onAssetClick, onDownload, onShare }: AssetGr
 
             {/* File type indicator */}
             <div className="absolute top-2 right-2">
-              {asset.fileType === 'video' && (
+              {isVideoFile(asset) && (
                 <div className="bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs flex items-center">
                   <Play className="h-3 w-3 mr-1" />
                   Video

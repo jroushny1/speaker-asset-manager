@@ -22,6 +22,13 @@ export function AssetDetailModal({
   onDownload,
   onShare
 }: AssetDetailModalProps) {
+  // Detect if file is actually a video based on URL extension
+  const isVideoFile = (asset: Asset): boolean => {
+    if (asset.fileType === 'video') return true
+    const videoExtensions = ['.mp4', '.mov', '.avi', '.wmv', '.flv', '.webm', '.mkv', '.m4v']
+    return videoExtensions.some(ext => asset.publicUrl?.toLowerCase().endsWith(ext))
+  }
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -62,15 +69,7 @@ export function AssetDetailModal({
           {/* Asset Preview */}
           <div className="space-y-4">
             <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-              {asset.fileType === 'image' ? (
-                <Image
-                  src={asset.publicUrl}
-                  alt={asset.originalFilename}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-              ) : asset.fileType === 'video' ? (
+              {isVideoFile(asset) ? (
                 <video
                   src={asset.publicUrl}
                   controls
@@ -85,6 +84,14 @@ export function AssetDetailModal({
                 >
                   Your browser does not support the video tag.
                 </video>
+              ) : !isVideoFile(asset) ? (
+                <Image
+                  src={asset.publicUrl}
+                  alt={asset.originalFilename}
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
               ) : (
                 <div className="w-full h-full bg-black flex items-center justify-center">
                   <div className="text-center">
@@ -227,7 +234,7 @@ export function AssetDetailModal({
                   onClick={() => window.open(asset.publicUrl, '_blank')}
                 >
                   <Eye className="h-4 w-4 mr-2" />
-                  {asset.fileType === 'video' ? 'Open Video in New Tab' : 'Open Full Size'}
+                  {isVideoFile(asset) ? 'Open Video in New Tab' : 'Open Full Size'}
                 </Button>
               </div>
             </div>
