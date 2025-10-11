@@ -73,9 +73,16 @@ export function AssetGrid({ assets, onAssetClick, onDownload, onShare }: AssetGr
             ) : asset.fileType === 'video' && asset.publicUrl ? (
               <div className="relative w-full h-full">
                 <video
-                  src={asset.publicUrl}
+                  src={`${asset.publicUrl}#t=0.1`}
                   className="w-full h-full object-cover"
                   preload="metadata"
+                  muted
+                  playsInline
+                  crossOrigin="anonymous"
+                  onError={(e) => {
+                    console.error('Video thumbnail error:', e)
+                    console.log('Video URL:', asset.publicUrl)
+                  }}
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center pointer-events-none">
                   <Play className="h-12 w-12 text-white opacity-90" />

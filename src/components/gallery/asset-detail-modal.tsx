@@ -76,6 +76,12 @@ export function AssetDetailModal({
                   controls
                   className="w-full h-full object-contain"
                   preload="metadata"
+                  crossOrigin="anonymous"
+                  playsInline
+                  onError={(e) => {
+                    console.error('Video playback error:', e)
+                    console.log('Video URL:', asset.publicUrl)
+                  }}
                 >
                   Your browser does not support the video tag.
                 </video>
