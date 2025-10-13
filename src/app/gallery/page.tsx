@@ -31,7 +31,7 @@ export default function GalleryPage() {
   const loadAssets = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/assets?pageSize=200')
+      const response = await fetch('/api/assets?pageSize=1000')
       if (!response.ok) {
         throw new Error('Failed to fetch assets')
       }

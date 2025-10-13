@@ -55,7 +55,7 @@ export async function createAssetRecord(asset: Omit<Asset, 'id'>): Promise<Asset
 }
 
 export async function getAssets(
-  pageSize: number = 100,
+  pageSize: number = 1000,
   offset?: string
 ): Promise<{ records: Asset[]; offset?: string }> {
   const selectOptions: any = {
@@ -67,9 +67,10 @@ export async function getAssets(
     selectOptions.offset = offset
   }
 
+  // Use .all() to fetch all records across multiple pages
   const records = await getTable()
     .select(selectOptions)
-    .firstPage()
+    .all()
 
   const assets: Asset[] = records.map((record) => ({
     id: record.id,
