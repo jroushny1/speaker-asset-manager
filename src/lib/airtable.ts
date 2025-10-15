@@ -17,12 +17,20 @@ export async function createAssetRecord(asset: Omit<Asset, 'id'>): Promise<Asset
     filename: asset.filename,
     originalFilename: asset.originalFilename,
     url: asset.url,
+    fileType: asset.fileType,
+    mimeType: asset.mimeType,
+    size: asset.size,
     event: asset.event,
     date: asset.date,
     photographer: asset.photographer,
     description: asset.description,
     uploadedAt: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
   }
+
+  // Optional fields
+  if (asset.width) recordData.width = asset.width
+  if (asset.height) recordData.height = asset.height
+  if (asset.duration) recordData.duration = asset.duration
 
   // Only add tags if they exist and are not empty
   if (asset.tags && asset.tags.length > 0) {
@@ -39,12 +47,12 @@ export async function createAssetRecord(asset: Omit<Asset, 'id'>): Promise<Asset
     originalFilename: record.get('originalFilename') as string,
     url: record.get('url') as string,
     publicUrl: record.get('url') as string, // Use url as publicUrl for compatibility
-    fileType: asset.fileType, // Use original data
-    mimeType: asset.mimeType, // Use original data
-    size: asset.size, // Use original data
-    width: asset.width,
-    height: asset.height,
-    duration: asset.duration,
+    fileType: record.get('fileType') as 'image' | 'video',
+    mimeType: record.get('mimeType') as string,
+    size: record.get('size') as number,
+    width: record.get('width') as number | undefined,
+    height: record.get('height') as number | undefined,
+    duration: record.get('duration') as number | undefined,
     uploadedAt: record.get('uploadedAt') as string,
     event: record.get('event') as string,
     date: record.get('date') as string,
@@ -74,16 +82,16 @@ export async function getAssets(
 
   const assets: Asset[] = records.map((record) => ({
     id: record.id,
-    filename: record.get('filename') as string, // Use Name field
-    originalFilename: record.get('filename') as string,
+    filename: record.get('filename') as string,
+    originalFilename: record.get('originalFilename') as string || record.get('filename') as string,
     url: record.get('url') as string,
-    publicUrl: record.get('url') as string, // Use URL as publicUrl for compatibility
-    fileType: 'image' as 'image' | 'video', // Default to image since we don't store this
-    mimeType: 'image/png', // Default since we don't store this
-    size: 0, // Default since we don't store this
-    width: undefined,
-    height: undefined,
-    duration: undefined,
+    publicUrl: record.get('url') as string,
+    fileType: (record.get('fileType') as 'image' | 'video') || 'image',
+    mimeType: (record.get('mimeType') as string) || 'image/png',
+    size: (record.get('size') as number) || 0,
+    width: record.get('width') as number | undefined,
+    height: record.get('height') as number | undefined,
+    duration: record.get('duration') as number | undefined,
     uploadedAt: record.get('uploadedAt') as string,
     event: record.get('event') as string,
     date: record.get('date') as string,
