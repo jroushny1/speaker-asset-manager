@@ -44,6 +44,7 @@ export default function UploadPage() {
   const [batchMode, setBatchMode] = useState(false)
 
   const handleFilesSelected = (selectedFiles: File[]) => {
+    console.log('handleFilesSelected called with:', selectedFiles.length, 'files')
     setFiles(selectedFiles)
 
     // Check file sizes and warn about large files
@@ -51,12 +52,16 @@ export default function UploadPage() {
     const veryLargeFiles = selectedFiles.filter(file => file.size > 500 * 1024 * 1024) // 500MB
 
     if (veryLargeFiles.length > 0) {
-      toast.info(`${veryLargeFiles.length} very large file(s) selected (500MB+). Uploads may take 10-20 minutes each.`, {
-        duration: 8000
+      console.log('Showing very large files toast')
+      toast(`${veryLargeFiles.length} very large file(s) selected (500MB+). Uploads may take 10-20 minutes each.`, {
+        duration: 8000,
+        icon: 'ℹ️'
       })
     } else if (largeFiles.length > 0) {
-      toast.info(`${largeFiles.length} large file(s) selected (100MB+). Uploads may take 3-8 minutes each.`, {
-        duration: 6000
+      console.log('Showing large files toast')
+      toast(`${largeFiles.length} large file(s) selected (100MB+). Uploads may take 3-8 minutes each.`, {
+        duration: 6000,
+        icon: 'ℹ️'
       })
     }
   }
@@ -86,13 +91,15 @@ export default function UploadPage() {
 
     if (veryLargeFiles.length > 0) {
       const fileInfo = veryLargeFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ')
-      toast.warning(`Very large files detected: ${fileInfo}. Upload may take 10-20 minutes per file.`, {
-        duration: 10000
+      toast(`Very large files detected: ${fileInfo}. Upload may take 10-20 minutes per file.`, {
+        duration: 10000,
+        icon: '⚠️'
       })
     } else if (largeFiles.length > 0) {
       const fileInfo = largeFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ')
-      toast.info(`Large files detected: ${fileInfo}. Upload may take 3-8 minutes per file.`, {
-        duration: 8000
+      toast(`Large files detected: ${fileInfo}. Upload may take 3-8 minutes per file.`, {
+        duration: 8000,
+        icon: 'ℹ️'
       })
     }
   }
@@ -334,6 +341,15 @@ export default function UploadPage() {
   }
 
   const isFormValid = metadata.event && metadata.date && files.length > 0
+
+  // Debug logging
+  console.log('Upload page render:', {
+    filesCount: files.length,
+    event: metadata.event,
+    date: metadata.date,
+    isFormValid,
+    uploading
+  })
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">

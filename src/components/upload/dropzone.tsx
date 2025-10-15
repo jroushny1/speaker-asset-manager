@@ -45,10 +45,13 @@ export function UploadDropzone({
         return fileWithPreview
       })
 
-      setFiles((prev) => [...prev, ...filesWithPreview])
-      onFilesSelected([...files, ...acceptedFiles])
+      setFiles((prev) => {
+        const newFiles = [...prev, ...filesWithPreview]
+        onFilesSelected(newFiles)
+        return newFiles
+      })
     },
-    [files, onFilesSelected]
+    [onFilesSelected]
   )
 
   const { getRootProps, getInputProps, isDragAccept, isDragReject } = useDropzone({
