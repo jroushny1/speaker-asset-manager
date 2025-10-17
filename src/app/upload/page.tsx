@@ -35,6 +35,7 @@ export default function UploadPage() {
   const [metadata, setMetadata] = useState<AssetMetadata>({
     event: '',
     date: '',
+    location: '',
     photographer: '',
     tags: [],
     description: '',
@@ -397,6 +398,16 @@ export default function UploadPage() {
                   value={metadata.date}
                   onChange={(e) => handleMetadataChange('date', e.target.value)}
                   required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={metadata.location}
+                  onChange={(e) => handleMetadataChange('location', e.target.value)}
+                  placeholder="Austin, TX"
                 />
               </div>
 

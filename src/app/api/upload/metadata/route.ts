@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       uploadedAt: new Date().toISOString(),
       event: metadata.event,
       date: metadata.date,
+      location: metadata.location || '',
       photographer: metadata.photographer || '',
       tags: metadata.tags || [],
       description: metadata.description || '',

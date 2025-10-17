@@ -13,6 +13,7 @@ export interface Asset {
   uploadedAt: string
   event: string
   date: string
+  location?: string
   photographer: string
   tags: string[]
   description?: string
@@ -28,6 +29,7 @@ export interface UploadProgress {
 export interface AssetMetadata {
   event: string
   date: string
+  location?: string
   photographer: string
   tags: string[]
   description?: string
